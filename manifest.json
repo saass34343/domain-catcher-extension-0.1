@@ -3,7 +3,7 @@
   "name": "Domain Catcher",
   "version": "1.0",
   "description": "Catches good domain names from expireddomains.net based on specific criteria",
-  "permissions": ["storage", "scripting", "tabs", "cookies"],
+  "permissions": ["storage", "scripting", "tabs"],
   "host_permissions": ["*://*.expireddomains.net/*"],
   "action": {
     "default_popup": "popup.html"
