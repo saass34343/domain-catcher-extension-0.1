@@ -1,10 +1,14 @@
+console.log("Content script loaded");
+
 let isScanning = false;
 let scanSettings = {};
 let foundDomains = [];
 let scanInterval;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log("Message received in content.js:", request);
   if (request.action === "startScan") {
+    console.log("Starting scan with settings:", request.settings);
     scanSettings = request.settings;
     isScanning = true;
     foundDomains = [];
@@ -19,7 +23,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 });
-
 function checkLoginAndNavigate() {
   if (document.querySelector('form#login')) {
     alert("Please log in to ExpiredDomains.net first, then click 'Start Scanning' again.");
