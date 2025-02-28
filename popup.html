@@ -1,0 +1,100 @@
+// popup.html - Extension popup interface
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Domain Catcher</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 300px;
+      padding: 10px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    input[type="number"], input[type="text"] {
+      width: 60px;
+    }
+    input[type="checkbox"] {
+      margin-right: 5px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 8px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #3367d6;
+    }
+    .results {
+      margin-top: 15px;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Domain Catcher Settings</h2>
+  
+  <div class="row">
+    <label>Search Volume (SV):</label>
+    <div>
+      <input type="number" id="svMin" min="100" value="100"> to 
+      <input type="number" id="svMax" min="100" value="9999">
+    </div>
+  </div>
+  
+  <div class="row">
+    <label>CPC (USD):</label>
+    <div>Up to $<input type="number" id="cpcMax" min="0" max="1" step="0.01" value="1.00"></div>
+  </div>
+  
+  <div class="row">
+    <label>Characters:</label>
+    <div>
+      <input type="number" id="charsMin" min="1" value="8"> to 
+      <input type="number" id="charsMax" min="1" value="24">
+    </div>
+  </div>
+  
+  <div class="row">
+    <label>Domain Extensions:</label>
+    <div>
+      <div><input type="checkbox" id="ext_net" checked>.net</div>
+      <div><input type="checkbox" id="ext_co" checked>.co</div>
+    </div>
+  </div>
+  
+  <div class="row">
+    <label>Available in .com:</label>
+    <div><input type="checkbox" id="avail_com" checked></div>
+  </div>
+  
+  <div class="row">
+    <label>Exclude Adult:</label>
+    <div><input type="checkbox" id="noAdult" checked></div>
+  </div>
+  
+  <button id="startScan">Start Scanning</button>
+  
+  <div class="results" id="resultsBox">
+    <p>Matching domains will appear here...</p>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
