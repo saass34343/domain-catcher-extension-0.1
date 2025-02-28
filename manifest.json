@@ -1,0 +1,32 @@
+// manifest.json - Extension configuration
+{
+  "manifest_version": 3,
+  "name": "Domain Catcher",
+  "version": "1.0",
+  "description": "Catches good domain names from expireddomains.net based on specific criteria",
+  "permissions": ["storage", "scripting", "tabs"],
+  "host_permissions": ["*://*.expireddomains.net/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "images/icon16.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.expireddomains.net/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
+
