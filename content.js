@@ -1,5 +1,4 @@
-// content.js - Updated to search in deleted .com section
-
+// content.js - Fixed to preserve login session
 // Initialize variables
 let isScanning = false;
 let scanSettings = {};
@@ -19,7 +18,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     // Start scanning
     checkLoginAndNavigate();
     
-    // Schedule periodical scanning (every 8 seconds)
+    // Schedule periodical scanning (every 10 seconds)
     clearInterval(scanInterval); // Clear any existing interval
     scanInterval = setInterval(function() {
       if (isScanning) {
@@ -27,11 +26,15 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       } else {
         clearInterval(scanInterval);
       }
-    }, 8000);
+    }, 10000);
+    
+    // Send response to indicate message was received
+    sendResponse({status: "started"});
+    return true;
   }
 });
 
-// Function to check login status and navigate to correct page
+// Function to check login status and navigate correctly
 function checkLoginAndNavigate() {
   console.log("Checking login and navigation status...");
   
@@ -39,13 +42,15 @@ function checkLoginAndNavigate() {
   if (document.querySelector('form#login')) {
     console.log("Login form detected. Please log in first.");
     alert("Please log in to ExpiredDomains.net first, then click 'Start Scanning' again.");
+    isScanning = false;
     return;
   }
   
   // Check if we need to navigate to the main page first
   if (window.location.href.includes('not-found') || window.location.href.endsWith('.net/')) {
-    console.log("Navigating to main page...");
-    window.location.href = 'https://www.expireddomains.net/domain-name-search/';
+    console.log("On main page, navigating to domain search...");
+    // Use window.open instead of location.href to maintain session
+    window.open('https://www.expireddomains.net/domain-name-search/', '_self');
     return;
   }
   
@@ -60,9 +65,10 @@ function checkLoginAndNavigate() {
     );
     
     if (deletedDomainsLink) {
-      deletedDomainsLink.click();
+      // Instead of clicking, use the href to navigate
+      window.open(deletedDomainsLink.href, '_self');
     } else {
-      window.location.href = 'https://www.expireddomains.net/deleted-com-domains/';
+      window.open('https://www.expireddomains.net/deleted-com-domains/', '_self');
     }
     return;
   }
@@ -78,6 +84,15 @@ function checkLoginAndNavigate() {
 function scanPage() {
   console.log("Scanning page for domains...");
   
+  // Check for login form again (in case we got logged out)
+  if (document.querySelector('form#login')) {
+    console.log("Login form detected. Session expired.");
+    alert("Your login session expired. Please log in again and restart the scan.");
+    isScanning = false;
+    clearInterval(scanInterval);
+    return;
+  }
+  
   // Double check if we're on the deleted .com domains section
   if (!window.location.href.includes('deleted-com-domains')) {
     console.log("Not on deleted .com domains page. Navigating...");
@@ -85,8 +100,11 @@ function scanPage() {
     return;
   }
   
-  // Setup filters if needed
-  setupFilters();
+  // Setup filters if needed (only once)
+  if (!window.filtersApplied) {
+    setupFilters();
+    window.filtersApplied = true;
+  }
   
   // Get all domain rows
   const domainRows = document.querySelectorAll('table#listing tbody tr');
@@ -116,18 +134,24 @@ function scanPage() {
       }
       
       // Check if it's available in .net and .co based on settings
+      let passesExtensionCheck = true;
+      
       if (scanSettings.ext_net) {
         const netStatusCell = row.querySelector('td.field_statusnet');
         if (!netStatusCell || !netStatusCell.querySelector('img[alt*="available"]')) {
-          return;
+          passesExtensionCheck = false;
         }
       }
       
-      if (scanSettings.ext_co) {
+      if (passesExtensionCheck && scanSettings.ext_co) {
         const coStatusCell = row.querySelector('td.field_statusco');
         if (!coStatusCell || !coStatusCell.querySelector('img[alt*="available"]')) {
-          return;
+          passesExtensionCheck = false;
         }
+      }
+      
+      if (!passesExtensionCheck) {
+        return;
       }
       
       // Get domain length without extension
@@ -195,7 +219,8 @@ function scanPage() {
   const nextButton = document.querySelector('.next a');
   if (nextButton) {
     console.log("Moving to next page...");
-    nextButton.click();
+    // Use the href attribute instead of clicking
+    window.open(nextButton.href, '_self');
   } else {
     console.log("No next page button found. Finished scanning or pagination element not found.");
   }
@@ -203,7 +228,7 @@ function scanPage() {
 
 // Function to set up filters on the page if needed
 function setupFilters() {
-  // Example: Set up filters for search volume if the filter inputs exist
+  // Set up filters for search volume if the filter inputs exist
   const svMinInput = document.querySelector('input[name="minseav"]');
   const svMaxInput = document.querySelector('input[name="maxseav"]');
   
@@ -218,10 +243,52 @@ function setupFilters() {
     cpcMaxInput.value = scanSettings.cpcMax;
   }
   
-  // Apply filters if button exists
+  // Apply filters if button exists - do this only once
   const filterButton = document.querySelector('button.btn-search');
   if (filterButton && (svMinInput || cpcMaxInput)) {
     console.log("Applying filters...");
-    filterButton.click();
+    // Directly submit the form instead of clicking the button
+    const form = filterButton.closest('form');
+    if (form) {
+      form.submit();
+    } else {
+      filterButton.click();
+    }
   }
 }
+
+// background.js - Updated to handle cookies and session management
+chrome.runtime.onInstalled.addListener(function() {
+  console.log("Domain Catcher extension installed!");
+  
+  // Initialize storage with default settings
+  chrome.storage.local.set({
+    svMin: 100,
+    svMax: 9999,
+    cpcMax: 1.00,
+    charsMin: 8,
+    charsMax: 24,
+    ext_net: true,
+    ext_co: true,
+    avail_com: true,
+    noAdult: true,
+    results: []
+  });
+});
+
+// Preserve cookies and session data
+chrome.webRequest.onBeforeSendHeaders.addListener(
+  function(details) {
+    const headers = details.requestHeaders;
+    
+    // Ensure we're preserving cookies
+    const cookieHeader = headers.find(h => h.name.toLowerCase() === 'cookie');
+    if (cookieHeader) {
+      console.log("Preserving cookie header");
+    }
+    
+    return { requestHeaders: headers };
+  },
+  { urls: ["*://*.expireddomains.net/*"] },
+  ["blocking", "requestHeaders"]
+);
