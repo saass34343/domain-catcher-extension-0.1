@@ -1,7 +1,7 @@
 // background.js - Background script for the extension
-chrome.runtime.onInstalled.addListener(function() {
+chrome.runtime.onInstalled.addListener(function () {
   console.log("Domain Catcher extension installed!");
-  
+
   // Initialize storage with default settings
   chrome.storage.local.set({
     svMin: 100,
@@ -17,13 +17,19 @@ chrome.runtime.onInstalled.addListener(function() {
   });
 });
 
-// Listen for tab updates to reinject content script if needed
-chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  if (changeInfo.status === 'complete' && tab.url.includes('expireddomains.net')) {
-    chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      files: ['content.js']
-    });
-  }
-});
+// Preserve cookies and session data
+chrome.webRequest.onBeforeSendHeaders.addListener(
+  function (details) {
+    const headers = details.requestHeaders;
 
+    // Ensure we're preserving cookies
+    const cookieHeader = headers.find(h => h.name.toLowerCase() === 'cookie');
+    if (cookieHeader) {
+      console.log("Preserving cookie header");
+    }
+
+    return { requestHeaders: headers };
+  },
+  { urls: ["*://*.expireddomains.net/*"] },
+  ["blocking", "requestHeaders"]
+);
