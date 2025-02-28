@@ -1,6 +1,7 @@
-// background.js - Background script for the extension
-chrome.runtime.onInstalled.addListener(function () {
+// background.js
+chrome.runtime.onInstalled.addListener(() => {
   console.log("Domain Catcher extension installed!");
+});
 
   // Initialize storage with default settings
   chrome.storage.local.set({
