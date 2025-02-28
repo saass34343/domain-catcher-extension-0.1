@@ -10,8 +10,9 @@
   "webRequest",
   "webRequestBlocking"
 ],
-  "host_permissions": ["*://*.expireddomains.net/*"],
-  "action": {
+"host_permissions": [
+  "*://*.expireddomains.net/*"
+]  "action": {
     "default_popup": "popup.html"
   },
   "background": {
